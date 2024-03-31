@@ -192,23 +192,26 @@ String processor(const String& var) {
 
 
 int IRAM_ATTR CLAppHttpd::snapToStream(bool debug) {
+    if (ws->availableForWriteAll()) {
+        int res = AppCam.snapToBuffer();
 
-    int res = AppCam.snapToBuffer();
+        if(!res) {
 
-    if(!res) {
+            if(AppCam.isJPEGinBuffer()){
 
-        if(AppCam.isJPEGinBuffer()){
+                ws->binaryAll( AppCam.getBuffer(), AppCam.getBufferSize());
 
-            ws->binaryAll( AppCam.getBuffer(), AppCam.getBufferSize());
+            } else {
 
-        } else {
-
-            res = OS_FAIL;
+                res = OS_FAIL;
+            }
         }
+
+        AppCam.releaseBuffer();
+        return res;
     }
 
-    AppCam.releaseBuffer();
-    return res;
+    return ESP_OK;
 }
 
 StreamResponseEnum CLAppHttpd::startStream(uint32_t id, CaptureModeEnum streammode) {
