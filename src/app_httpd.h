@@ -10,6 +10,7 @@
 #include "storage.h"
 #include "app_conn.h"
 #include "app_cam.h"
+#include <ArduinoJson.h>
 
 #define MAX_URI_MAPPINGS                32
 
@@ -112,8 +113,8 @@ class CLAppHttpd : public CLAppComponent {
         void setLamp(int newVal = DEFAULT_FLASH);
         int getLamp() {return lampVal;};    
 
-        void dumpSystemStatusToJson(char * buf, size_t size);
-        void dumpCameraStatusToJson(char * buf, size_t size, bool full = true);
+        void dumpSystemStatusToJson(JsonDocument& json);
+        void dumpCameraStatusToJson(JsonDocument& json, bool full = true);
 
         /**
          * @brief attaches a new PWM/servo and returns its ID in case of success, or OS_FAIL otherwise

@@ -7,6 +7,7 @@
 #include <DNSServer.h>
 #include <ESPmDNS.h>
 #include <time.h>
+#include <ArduinoJson.h>
 
 #include "parsebytes.h"
 #include "app_component.h"
@@ -52,34 +53,34 @@ class CLAppConn : public CLAppComponent {
 
         void configMDNS();
         void handleDNSRequest(){if (captivePortal) dnsServer.processNextRequest();};
-        char * getMDNSname() {return mdnsName;};
+        char* getMDNSname() {return mdnsName;};
         void setMDNSName(const char * str) {snprintf(mdnsName, sizeof(mdnsName), str);};
 
         void configNTP();
-        char * getNTPServer() { return ntpServer;};
+        char* getNTPServer() { return ntpServer;};
         void setNTPServer(const char * str) {snprintf(ntpServer, sizeof(ntpServer), str);};
         long getGmtOffset_sec() {return gmtOffset_sec;};
         void setGmtOffset_sec(long sec) {gmtOffset_sec = sec;};
         int getDaylightOffset_sec() {return daylightOffset_sec;};
         void setDaylightOffset_sec(int sec) {daylightOffset_sec = sec;};
 
-        char * getSSID() {return ssid;};
+        char* getSSID() {return ssid;};
         void setSSID(const char * str) {snprintf(ssid, sizeof(ssid), str);};
         void setPassword(const char * str) {snprintf(password, sizeof(password), str);};;
 
         bool isDHCPEnabled() {return dhcp;};
         void setDHCPEnabled(bool val) {dhcp = val;};
-        StaticIP * getStaticIP() {return &staticIP;};
+        StaticIP* getStaticIP() {return &staticIP;};
         void setStaticIP(IPAddress ** address, const char * strval);
 
         wl_status_t wifiStatus() {return (accesspoint?ap_status:WiFi.status());};
 
-        char * getHTTPUrl(){ return httpURL;};
+        char* getHTTPUrl(){ return httpURL;};
         // char * getStreamUrl(){ return streamURL;};
         int getPort() {return httpPort;};
         void setPort(int port) {httpPort = port;};
 
-        char * getApName() {return apName;};
+        char* getApName() {return apName;};
         void setApName(const char * str) {snprintf(apName, sizeof(apName), str);};
         void setApPass(const char * str) {snprintf(apPass, sizeof(apPass), str);};
 
@@ -88,20 +89,20 @@ class CLAppConn : public CLAppComponent {
         void setLoadAsAP(bool val) {load_as_ap = val;}
         bool getAPDHCP() {return ap_dhcp;};
         void setAPDHCP(bool val) {ap_dhcp = val;};
-        StaticIP * getAPIP() {return &apIP;};
+        StaticIP* getAPIP() {return &apIP;};
         int getAPChannel() {return ap_channel;};
         void setAPChannel(int channel) {ap_channel = channel;};
 
         bool isCaptivePortal() {return captivePortal;};
 
-        char * getLocalTimeStr() {return localTimeString;};
-        char * getUpTimeStr() {return upTimeString;};
+        char* getLocalTimeStr() {return localTimeString;};
+        char* getUpTimeStr() {return upTimeString;};
         void updateTimeStr();
 
         void printLocalTime(bool extraData=false);
 
-        char * getUser() {return user;};
-        char * getPwd() {return pwd;};
+        char* getUser() {return user;};
+        char* getPwd() {return pwd;};
         void setUser(const char * val) {snprintf(user, sizeof(user), val);};
         void setPwd(const char * val) {snprintf(pwd, sizeof(pwd), val);}
 

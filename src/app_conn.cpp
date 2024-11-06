@@ -306,102 +306,93 @@ void CLAppConn::readIPFromJSON (jparse_ctx_t * context, IPAddress ** ip_address,
 }
 
 int CLAppConn::savePrefs() {
+  JsonDocument json;
+  char ebuf[254]; 
 
-    char * prefs_file = getPrefsFileName(true); 
+  char * prefs_file = getPrefsFileName(true); 
 
-    if (Storage.exists(prefs_file)) {
-        Serial.printf("Updating %s\r\n", prefs_file);
-    } else {
-        Serial.printf("Creating %s\r\n", prefs_file);
+  if (Storage.exists(prefs_file)) {
+    Serial.printf("Updating %s\r\n", prefs_file);
+  } else {
+    Serial.printf("Creating %s\r\n", prefs_file);
+  }
+
+  json["mdns_name"] = this->mdnsName;
+
+  int count = stationCount;
+  int index = getSSIDIndex();
+  if(index < 0 && count == MAX_KNOWN_STATIONS) {
+    count--;
+  }
+
+  if(index < 0 || count > 0) {
+    json["stations"].to<JsonArray>();
+    uint8_t i=0;
+    if(index < 0 && strcmp(ssid, "") != 0) {
+      urlEncode(ebuf, password, sizeof(password));
+      json["stations"][i]["ssid"] = this->ssid;
+      json["stations"][i]["pass"] = ebuf;
+      i++;
     }
 
-    char buf[1024];
-    json_gen_str_t jstr;
-    json_gen_str_start(&jstr, buf, sizeof(buf), NULL, NULL);
-    json_gen_start_object(&jstr);
-    json_gen_obj_set_string(&jstr, "mdns_name", mdnsName);
-
-    int count = stationCount;
-    int index = getSSIDIndex();
-    if(index < 0 && count == MAX_KNOWN_STATIONS) {
-        count--;
+    for(int i=0; i < count && stationList[i]; i++) {
+      json["stations"][i]["ssid"] = stationList[i]->ssid;
+      
+      if(index >= 0 && i == index) {
+        urlEncode(ebuf, password, sizeof(password));
+        json["stations"][i]["pass"] = ebuf;
+      }
+      else {
+        Serial.println(ebuf);
+        urlEncode(ebuf, stationList[i]->password, sizeof(stationList[i]->password));
+        json["stations"][i]["pass"] = ebuf;
+      }
     }
+  }
 
-    char ebuf[254]; 
+  json["dhcp"] = this->dhcp;
+  json["static_ip"].to<JsonObject>();
+  if(staticIP.ip) json["static_ip"]["ip"] = staticIP.ip->toString();
+  if (staticIP.netmask) json["static_ip"]["netmask"] = staticIP.netmask->toString();
+  if (staticIP.gateway) json["static_ip"]["gateway"] = staticIP.gateway->toString();
+  if (staticIP.dns1) json["static_ip"]["dns1"] = staticIP.dns1->toString();
+  if (staticIP.dns2) json["static_ip"]["dns2"] = staticIP.dns2->toString();
 
-    if(index < 0 || count > 0) {
-        json_gen_push_array(&jstr, "stations");
-        if(index < 0 && strcmp(ssid, "") != 0) {
-            json_gen_start_object(&jstr);
-            json_gen_obj_set_string(&jstr, "ssid", ssid);
-            urlEncode(ebuf, password, sizeof(password));
-            json_gen_obj_set_string(&jstr, "pass", ebuf);
-            json_gen_end_object(&jstr);
-        }
- 
-        for(int i=0; i < count && stationList[i]; i++) {
-            json_gen_start_object(&jstr);
-            json_gen_obj_set_string(&jstr, "ssid", stationList[i]->ssid);
-            if(index >= 0 && i == index) {
-                urlEncode(ebuf, password, sizeof(password));
-                json_gen_obj_set_string(&jstr, "pass", ebuf);
-            }
-            else {
-                Serial.println(ebuf);
-                urlEncode(ebuf, stationList[i]->password, sizeof(stationList[i]->password));
-                json_gen_obj_set_string(&jstr, "pass", ebuf);
-            }
-            json_gen_end_object(&jstr);
-        }
-        json_gen_pop_array(&jstr);
-    }
-
-    json_gen_obj_set_bool(&jstr, "dhcp", dhcp);
-    json_gen_push_object(&jstr, "static_ip");
-    if(staticIP.ip) json_gen_obj_set_string(&jstr, "ip", staticIP.ip->toString().c_str());
-    if(staticIP.netmask) json_gen_obj_set_string(&jstr, "netmask", staticIP.netmask->toString().c_str());
-    if(staticIP.gateway) json_gen_obj_set_string(&jstr, "gateway", staticIP.gateway->toString().c_str());
-    if(staticIP.dns1) json_gen_obj_set_string(&jstr, "dns1", staticIP.dns1->toString().c_str());
-    if(staticIP.dns2) json_gen_obj_set_string(&jstr, "dns2", staticIP.dns2->toString().c_str());
-    json_gen_pop_object(&jstr);    
-    json_gen_obj_set_int(&jstr, "http_port", httpPort);
-    json_gen_obj_set_string(&jstr, (char*)"user", user);
-    json_gen_obj_set_string(&jstr, (char*)"pwd", pwd);
-    json_gen_obj_set_bool(&jstr, "ota_enabled", otaEnabled);
-    urlEncode(ebuf, otaPassword, sizeof(otaPassword));
-    json_gen_obj_set_string(&jstr, "ota_password", ebuf);
+  json["http_port"] = this->httpPort;
+  json["user"] = this->user;
+  json["pwd"] = this->pwd;
+  json["ota_enabled"] = this->otaEnabled;
+  urlEncode(ebuf, otaPassword, sizeof(otaPassword));
+  json["ota_password"] = ebuf;
     
-    json_gen_obj_set_bool(&jstr, "accesspoint", load_as_ap);
-    json_gen_obj_set_string(&jstr, "ap_ssid", apName);
-    urlEncode(ebuf, apPass, sizeof(apPass));
-    json_gen_obj_set_string(&jstr, "ap_pass", ebuf);
-    json_gen_obj_set_bool(&jstr, "ap_dhcp", ap_dhcp);
-    json_gen_push_object(&jstr, "ap_ip");
-    if(apIP.ip) json_gen_obj_set_string(&jstr, "ip", apIP.ip->toString().c_str());
-    if(apIP.netmask) json_gen_obj_set_string(&jstr, "netmask", apIP.netmask->toString().c_str());
-    json_gen_pop_object(&jstr);
+  json["accesspoint"] = this->load_as_ap;
+  json["ap_ssid"] = this-> apName;
+  urlEncode(ebuf, apPass, sizeof(apPass));
+  json["ap_pass"] = ebuf;
+  json["ap_dhcp"] = this->ap_dhcp;
+  if(apIP.ip)       json["ap_ip"]["ip"] = apIP.ip->toString();
+  if(apIP.netmask)  json["ap_ip"]["netmask"] = apIP.netmask->toString();
+    
+  json["ntp_server"] = this->ntpServer;
+  json["gmt_offset"] = this->gmtOffset_sec;
+  json["dst_offset"] = this->daylightOffset_sec;
+  json["debug_mode"] = this->isDebugMode();
 
-    json_gen_obj_set_string(&jstr, "ntp_server", ntpServer);
-    json_gen_obj_set_int(&jstr, "gmt_offset", gmtOffset_sec);
-    json_gen_obj_set_int(&jstr, "dst_offset", daylightOffset_sec);
-
-    json_gen_obj_set_bool(&jstr, "debug_mode", isDebugMode());
-    json_gen_end_object(&jstr);
-    json_gen_str_end(&jstr);
-
-    File file = Storage.open(prefs_file, FILE_WRITE);
-    if(file) {
-        file.print(buf);
-        file.close();
-        Serial.printf("File %s updated\r\n", prefs_file);
-        return OK;
-    }
-    else {
-        Serial.printf("Failed to save connection preferences to file %s\r\n", prefs_file);
-        return FAIL;
-    }
-    return OS_SUCCESS;
-}
+  File file = Storage.open(prefs_file, FILE_WRITE);
+  if(file) {
+    serializeJson(json, file);
+    file.close();
+    Serial.printf("File %s updated\r\n", prefs_file);
+    serializeJsonPretty(json, Serial);
+    Serial.println();
+    return OK;
+  }
+  else {
+    Serial.printf("Failed to save connection preferences to file %s\r\n", prefs_file);
+    return FAIL;
+  }
+  return OS_SUCCESS;
+} 
 
 void CLAppConn::startOTA() {
     // Set up OTA

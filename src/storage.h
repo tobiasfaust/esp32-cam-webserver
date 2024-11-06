@@ -13,8 +13,7 @@
 #define STORAGE_UNITS_MB 2
 
 #ifdef USE_LittleFS
-  #include <FS.h>
-  #include <LITTLEFS.h>
+  #include <LittleFS.h>
   #define FORMAT_LITTLEFS_IF_FAILED true
   #define STORAGE_UNITS STORAGE_UNITS_BT
 #elif defined(CAMERA_MODEL_LILYGO_T_SIMCAM)
