@@ -23,7 +23,7 @@ int CLAppHttpd::start() {
     ws = new AsyncWebSocket("/ws");
     
     server->on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-        if(!request->authenticate(AppConn.getUser(), AppConn.getPwd()))
+        if(!request->authenticate(AppConn.getUser().c_str(), AppConn.getPwd().c_str()))
             return request->requestAuthentication();
         if(AppConn.isConfigured())
             request->send(Storage.getFS(), "/www/camera.html", "", false, processor);
@@ -32,25 +32,25 @@ int CLAppHttpd::start() {
     });
 
     server->on("/camera", HTTP_GET, [](AsyncWebServerRequest *request){
-        if(!request->authenticate(AppConn.getUser(), AppConn.getPwd()))
+        if(!request->authenticate(AppConn.getUser().c_str(), AppConn.getPwd().c_str()))
             return request->requestAuthentication();
         request->send(Storage.getFS(), "/www/camera.html", "", false, processor);
     });  
 
     server->on("/setup", HTTP_GET, [](AsyncWebServerRequest *request){
-        if(!request->authenticate(AppConn.getUser(), AppConn.getPwd()))
+        if(!request->authenticate(AppConn.getUser().c_str(), AppConn.getPwd().c_str()))
             return request->requestAuthentication();
         request->send(Storage.getFS(), "/www/setup.html", "", false, processor);
     });    
 
     server->on("/dump", HTTP_GET, [](AsyncWebServerRequest *request){
-        if(!request->authenticate(AppConn.getUser(), AppConn.getPwd()))
+        if(!request->authenticate(AppConn.getUser().c_str(), AppConn.getPwd().c_str()))
             return request->requestAuthentication();
         request->send(Storage.getFS(), "/www/dump.html", "", false, processor);
     });    
 
     server->on("/view", HTTP_GET, [](AsyncWebServerRequest *request){
-        if(!request->authenticate(AppConn.getUser(), AppConn.getPwd()))
+        if(!request->authenticate(AppConn.getUser().c_str(), AppConn.getPwd().c_str()))
             return request->requestAuthentication();
         if(request->arg("mode") == "stream" || 
             request->arg("mode") == "still") {
