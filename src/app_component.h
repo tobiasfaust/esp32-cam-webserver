@@ -58,8 +58,8 @@ class CLAppComponent {
         int urlEncode(char * encoded, char * source, size_t len);
 
         unsigned char hex2int(char c);
-        int urlDecode(String* decoded, String* source); 
-        int urlEncode(String* encoded, String* source);
+        int urlDecode(String& decoded, const char* source); 
+        int urlEncode(String& encoded, const char* source);
         
 
     private:

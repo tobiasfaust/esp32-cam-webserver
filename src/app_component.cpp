@@ -114,19 +114,19 @@ unsigned char CLAppComponent::hex2int(char c) {
     return(0);
 }
 
-int CLAppComponent::urlDecode(String* decoded, String* source) {
+int CLAppComponent::urlDecode(String& decoded, const char* source) {
   char c;
   char code0;
   char code1;
-  for (int i =0; i < source->length(); i++){
-        c=decoded->charAt(i);
+  for (int i = 0; i < strlen(source); i++){
+    c=decoded.charAt(i);
     if (c == '+'){
         decoded += ' ';  
-    }else if (c == '%') {
+    } else if (c == '%') {
         i++;
-        code0=source->charAt(i);
+        code0=source[i];
         i++;
-        code1=source->charAt(i);
+        code1=source[i];
         c = (this->hex2int(code0) << 4) | this->hex2int(code1);
         decoded += c;
     } else{
@@ -140,13 +140,13 @@ int CLAppComponent::urlDecode(String* decoded, String* source) {
    return OS_SUCCESS;
 }
 
-int CLAppComponent::urlEncode(String* encoded, String* source) {
+int CLAppComponent::urlEncode(String& encoded, const char* source) {
   char c;
   char code0;
   char code1;
   char code2;
-  for (int i =0; i < source->length(); i++){
-    c=source->charAt(i);
+  for (int i = 0; i < strlen(source); i++){
+    c=source[i];
     if (c == ' '){
         encoded += '+';
     } else if (isalnum(c)){

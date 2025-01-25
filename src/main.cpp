@@ -1,10 +1,10 @@
 
-#include "app_config.h"     // global definitions
-#include "storage.h"        // Filesystem
-#include "app_conn.h"       // Conectivity 
-#include "app_cam.h"        // Camera 
-#include "app_httpd.h"      // Web server
-#include "camera_pins.h"    // Pin Mappings
+#include <app_config.h>     // global definitions
+#include <storage.h>        // Filesystem
+#include <app_conn.h>       // Conectivity 
+#include <app_cam.h>        // Camera 
+#include <app_httpd.h>      // Web server
+#include <camera_pins.h>    // Pin Mappings
 
 /* 
  * This sketch is a extension/expansion/rework of the ESP32 Camera webserer example.
@@ -80,8 +80,8 @@ void setup() {
     Serial.begin(115200);
     Serial.setDebugOutput(true);
 
-Serial.println("Start ESP32 Cam Webserver");
-Serial.println("Initialize....");
+    Serial.println("Start ESP32 Cam Webserver");
+    Serial.println("Initialize....");
 
     // Warn if no PSRAM is detected (typically user error with board selection in the IDE)
     if(!psramFound()){

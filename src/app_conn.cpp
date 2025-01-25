@@ -89,7 +89,8 @@ int CLAppConn::start() {
             // WiFi.setHostname(mdnsName);
 
             // Initiate network connection request (3rd argument, channel = 0 is 'auto')
-            WiFi.begin(bestBSSID, stationList[bestStation]->password.c_str(), 0, bestBSSID);
+            //WiFi.begin(bestBSSID, stationList[bestStation]->password.c_str(), 0, bestBSSID);
+            WiFi.begin(stationList[bestStation]->ssid.c_str(), stationList[bestStation]->password.c_str());
 
             // Wait to connect, or timeout
             unsigned long start = millis();
@@ -231,7 +232,7 @@ int CLAppConn::loadPrefs() {
                        json["stations"].as<JsonArray>()[i]["pass"] ) {
                         Station s;
                         s.ssid = json["stations"].as<JsonArray>()[i]["ssid"].as<String>();
-                        this->urlDecode(&s.password, &json["stations"].as<JsonArray>()[i]["pass"].as<String>());
+                        this->urlDecode(s.password, json["stations"].as<JsonArray>()[i]["pass"].as<String>().c_str());
                         Serial.println(s.ssid);
                         stationList[i] = &s;
                         stationCount++;
@@ -255,7 +256,8 @@ int CLAppConn::loadPrefs() {
     load_as_ap = json["accesspoint"].as<bool>();
     this->apName = json["ap_ssid"].as<String>().c_str();
 
-    this->urlDecode(&this->apPass, &json["ap_pass"].as<String>());
+    String apPassStr = json["ap_pass"].as<String>();
+    this->urlDecode(this->apPass, json["ap_pass"].as<String>().c_str());
 
     if(json["ap_channel"]) { this->ap_channel = json["ap_channel"].as<int>(); } else { ap_channel = 1; }
     if(json["ap_dhcp"]) { this->ap_dhcp = json["ap_dhcp"].as<bool>(); } else { ap_dhcp = true; }
@@ -272,7 +274,7 @@ int CLAppConn::loadPrefs() {
 
     // OTA
     this->otaEnabled = json["ota_enabled"].as<bool>();
-    this->urlDecode(&this->otaPassword, &json["ota_password"].as<String>());
+    this->urlDecode(this->otaPassword, json["ota_password"].as<String>().c_str());
 
     // NTP
     this->ntpServer = json["ntp_server"].as<String>(); 
@@ -323,7 +325,7 @@ int CLAppConn::savePrefs() {
     uint8_t i=0;
     if(index < 0 && this->ssid != "") {
       json["stations"][i]["ssid"] = this->ssid;
-      this->urlEncode(&this->password, &json["stations"][i]["pass"].as<String>());
+      this->urlEncode(this->password, json["stations"][i]["pass"].as<String>().c_str());
       i++;
     }
 
@@ -331,10 +333,14 @@ int CLAppConn::savePrefs() {
       json["stations"][i]["ssid"] = stationList[i]->ssid;
       
       if(index >= 0 && i == index) {
-        this->urlEncode(&json["stations"][i]["pass"].as<String>(), &this->password);
+        String encString("");
+        this->urlEncode(encString, this->password.c_str());
+        json["stations"][i]["pass"] = encString;
       }
       else {
-        this->urlEncode(&json["stations"][i]["pass"].as<String>(), &stationList[i]->password);
+        String encString("");
+        this->urlEncode(encString, stationList[i]->password.c_str());
+        json["stations"][i]["pass"] = encString;
       }
     }
   }
@@ -351,11 +357,15 @@ int CLAppConn::savePrefs() {
   json["user"] = this->user;
   json["pwd"] = this->pwd;
   json["ota_enabled"] = this->otaEnabled;
-  this->urlEncode(&json["ota_password"].as<String>(), &this->otaPassword);
+  String t("");
+  this->urlEncode(t, this->otaPassword.c_str());
+  json["ota_password"] = t;
     
   json["accesspoint"] = this->load_as_ap;
   json["ap_ssid"] = this-> apName;
-  this->urlEncode(&json["ap_pass"].as<String>(), &this->otaPassword);
+  t = "";
+  this->urlEncode(t, this->otaPassword.c_str());
+  json["ap_pass"] = t;
   json["ap_dhcp"] = this->ap_dhcp;
   if(apIP.ip)       json["ap_ip"]["ip"] = apIP.ip->toString();
   if(apIP.netmask)  json["ap_ip"]["netmask"] = apIP.netmask->toString();
