@@ -6,6 +6,8 @@ CLAppConn::CLAppConn() {
 
 int CLAppConn::start() {
 
+    stationList = new Station[MAX_KNOWN_STATIONS];
+
     if(loadPrefs() != OK) {
         return WiFi.status();
     }
@@ -46,8 +48,8 @@ int CLAppConn::start() {
                     Serial.printf("%3i : [%s] %s (%i)", i + 1, thisBSSID.c_str(), thisSSID.c_str(), thisRSSI);
                     // Scan our list of known external stations
                     for (int sta = 0; sta < stationCount; sta++) {
-                        if (stationList[sta]->ssid == thisSSID ||
-                        stationList[sta]->ssid == thisBSSID) {
+                        if (stationList[sta].ssid == thisSSID ||
+                        stationList[sta].ssid == thisBSSID) {
                             Serial.print("  -  Known!");
                             // Chose the strongest RSSI seen
                             if (thisRSSI > bestRSSI) {
@@ -90,7 +92,7 @@ int CLAppConn::start() {
 
             // Initiate network connection request (3rd argument, channel = 0 is 'auto')
             //WiFi.begin(bestBSSID, stationList[bestStation]->password.c_str(), 0, bestBSSID);
-            WiFi.begin(stationList[bestStation]->ssid.c_str(), stationList[bestStation]->password.c_str());
+            WiFi.begin(stationList[bestStation].ssid.c_str(), stationList[bestStation].password.c_str());
 
             // Wait to connect, or timeout
             unsigned long start = millis();
@@ -101,7 +103,7 @@ int CLAppConn::start() {
             // If we have connected, inform user
             if (WiFi.status() == WL_CONNECTED) {
                 setSSID(WiFi.SSID().c_str());
-                setPassword(stationList[bestStation]->password);
+                setPassword(stationList[bestStation].password);
                 Serial.println();
                 // Print IP details
                 Serial.printf("IP address: %s\r\n",WiFi.localIP().toString());
@@ -234,7 +236,7 @@ int CLAppConn::loadPrefs() {
                         s.ssid = json["stations"].as<JsonArray>()[i]["ssid"].as<String>();
                         this->urlDecode(s.password, json["stations"].as<JsonArray>()[i]["pass"].as<String>().c_str());
                         Serial.println(s.ssid);
-                        stationList[i] = &s;
+                        stationList[i] = s;
                         stationCount++;
                     } 
                 }
@@ -264,8 +266,14 @@ int CLAppConn::loadPrefs() {
     
     // read AP IP
     if(this->mdnsName && json["ap_ip"]) {
-        apIP.ip->fromString(json["ap_ip"]["ip"].as<String>());
-        apIP.netmask->fromString(json["ap_ip"]["netmask"].as<String>());
+        
+        IPAddress ip;
+        ip.fromString(json["ap_ip"]["ip"].as<String>());
+        apIP.ip = &ip;
+        
+        IPAddress nm;
+        nm.fromString(json["ap_ip"]["netmask"].as<String>());
+        apIP.netmask = &nm;
     }
     
     // User name and password
@@ -329,8 +337,8 @@ int CLAppConn::savePrefs() {
       i++;
     }
 
-    for(int i=0; i < count && stationList[i]; i++) {
-      json["stations"][i]["ssid"] = stationList[i]->ssid;
+    for(int i=0; i < count; i++) {
+      json["stations"][i]["ssid"] = stationList[i].ssid;
       
       if(index >= 0 && i == index) {
         String encString("");
@@ -339,7 +347,7 @@ int CLAppConn::savePrefs() {
       }
       else {
         String encString("");
-        this->urlEncode(encString, stationList[i]->password.c_str());
+        this->urlEncode(encString, stationList[i].password.c_str());
         json["stations"][i]["pass"] = encString;
       }
     }
@@ -357,15 +365,18 @@ int CLAppConn::savePrefs() {
   json["user"] = this->user;
   json["pwd"] = this->pwd;
   json["ota_enabled"] = this->otaEnabled;
+  
   String t("");
   this->urlEncode(t, this->otaPassword.c_str());
   json["ota_password"] = t;
     
   json["accesspoint"] = this->load_as_ap;
   json["ap_ssid"] = this-> apName;
+
   t = "";
   this->urlEncode(t, this->otaPassword.c_str());
   json["ap_pass"] = t;
+  
   json["ap_dhcp"] = this->ap_dhcp;
   if(apIP.ip)       json["ap_ip"]["ip"] = apIP.ip->toString();
   if(apIP.netmask)  json["ap_ip"]["netmask"] = apIP.netmask->toString();
@@ -505,13 +516,12 @@ void CLAppConn::updateTimeStr() {
 }
 
 int CLAppConn::getSSIDIndex() {
-    for(int i=0; i < stationCount; i++) {
-        if(!stationList[i]) break;
-        if(ssid == stationList[i]->ssid) {
-            return i;
-        }
+  for(int i=0; i < stationCount; i++) {
+    if(ssid == stationList[i].ssid) {
+      return i;
     }
-    return -1;
+  }
+  return -1;
 }
 
 CLAppConn AppConn;

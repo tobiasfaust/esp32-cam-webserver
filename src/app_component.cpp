@@ -69,6 +69,7 @@ int CLAppComponent::parsePrefs(JsonDocument& json) {
       
       if (!error) {
         serializeJsonPretty(json, Serial);
+        Serial.println();
         return OS_SUCCESS;
       }
     } else {
@@ -115,29 +116,22 @@ unsigned char CLAppComponent::hex2int(char c) {
 }
 
 int CLAppComponent::urlDecode(String& decoded, const char* source) {
-  char c;
-  char code0;
-  char code1;
-  for (int i = 0; i < strlen(source); i++){
-    c=decoded.charAt(i);
-    if (c == '+'){
-        decoded += ' ';  
-    } else if (c == '%') {
-        i++;
-        code0=source[i];
-        i++;
-        code1=source[i];
-        c = (this->hex2int(code0) << 4) | this->hex2int(code1);
-        decoded += c;
-    } else{
-        
-        decoded += c;  
+  int len = strlen(source);
+  decoded.reserve(len);
+  for (int i = 0; i < len; i++) {
+    if (source[i] == '%') {
+      if (i + 2 < len) {
+        char hex[3] = { source[i + 1], source[i + 2], '\0' };
+        decoded += static_cast<char>(strtol(hex, nullptr, 16));
+        i += 2;
+      }
+    } else if (source[i] == '+') {
+      decoded += ' ';
+    } else {
+      decoded += source[i];
     }
-      
-      yield();
   }
-    
-   return OS_SUCCESS;
+  return OS_SUCCESS;
 }
 
 int CLAppComponent::urlEncode(String& encoded, const char* source) {

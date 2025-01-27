@@ -75,6 +75,21 @@ int CLAppHttpd::start() {
     server->on("/system", HTTP_GET, onSystemStatus).setAuthentication(AppConn.getUser(), AppConn.getPwd());
     server->on("/info", HTTP_GET, onInfo).setAuthentication(AppConn.getUser(), AppConn.getPwd());
 
+    // make a snapshot and send it to the client
+    server->on("/capture", HTTP_GET, [](AsyncWebServerRequest *request){
+        if(AppCam.isConfigured()) {
+            if(AppCam.snapToBuffer() == ESP_OK) {
+                request->send(200, "image/jpeg", AppCam.getBuffer(), AppCam.getBufferSize());
+                AppCam.releaseBuffer();
+            }
+            else {
+                request->send(500, "text/plain", "Camera not ready");
+            }
+        }
+        else {
+            request->send(500, "text/plain", "Camera not configured");
+        }
+    }).setAuthentication(AppConn.getUser(), AppConn.getPwd());
     
     // adding WebSocket handler
     ws->onEvent(onWsEvent);
@@ -83,6 +98,7 @@ int CLAppHttpd::start() {
     snap_timer = xTimerCreate("SnapTimer", 1000/AppCam.getFrameRate()/portTICK_PERIOD_MS, pdTRUE, 0, onSnapTimer);
 
     DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
+    // TODO: if WiFi is not up, server->begin() produces a crash 
     server->begin();
 
     if(isDebugMode()) {

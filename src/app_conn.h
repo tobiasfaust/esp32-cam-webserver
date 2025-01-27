@@ -112,7 +112,7 @@ class CLAppConn : public CLAppComponent {
         void readIPFromJSON(jparse_ctx_t * context, IPAddress ** ip_address, char * token);
 
         // Known networks structure. Max number of known stations limited for memory considerations
-        Station *stationList[MAX_KNOWN_STATIONS]; 
+        Station* stationList; 
         // number of known stations
         int stationCount = 0;
 
